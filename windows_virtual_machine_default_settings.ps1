@@ -24,105 +24,55 @@ Configuration WindowsServerDefaultSettings {
   }
   Script 'UserRegistry' {
     GetScript = {
-      $RegFilePath = 'C:\Users\Default\NTUSER.DAT'
-      $RegLoadPath = 'HKLM\Default'
-
-      & REG LOAD $RegLoadPath $RegFilePath > $null 2>&1
-
-      $LocaleValue = Get-ItemProperty -Path 'REGISTRY::HKEY_LOCAL_MACHINE\Default\Control Panel\International' -Name 'LocaleName'
-
-      $unloaded = $false
-      $attempts = 0
-      while (!$unloaded -and ($attempts -le 5)) {
-          [gc]::Collect() # necessary call to be able to unload registry hive
-          & REG UNLOAD HKU\Replace > $null 2>&1
-          $unloaded = $?
-          $attempts += 1
+      @{
+        Result = (Get-WinHomeLocation).GeoId
       }
-      @{ Result = $LocaleValue.LocaleName }
     }
     SetScript = {
-      # Parameter
-      $RegFileURL = "https://raw.githubusercontent.com/FiveH3ad/International_Reg/main/International.reg"
-      $RegFile = "C:\Default_International.reg"
+      $xmlFile = @"
+<gs:GlobalizationServices xmlns:gs="urn:longhornGlobalizationUnattend">
+    <gs:UserList>
+        <gs:User UserID="Current" CopySettingsToSystemAcct="true" CopySettingsToDefaultUserAcct="true"/>
+    </gs:UserList>
+    <gs:UserLocale>
+        <gs:Locale Name="de-CH" SetAsCurrent="true"/>
+    </gs:UserLocale>
+    <gs:InputPreferences>
+        <gs:InputLanguageID Action="add" ID="0807:00000807" Default="true"/>
+    </gs:InputPreferences>
+    <gs:MUILanguagePreferences>
+        <gs:MUILanguage Value="de-CH"/>
+        <gs:MUIFallback Value="en-US"/>
+    </gs:MUILanguagePreferences>
+    <gs:LocationPreferences>
+        <gs:GeoID Value="223"/>
+    </gs:LocationPreferences>
+    <gs:SystemLocale Name="de-CH"/>
+</gs:GlobalizationServices>
+"@
+      $xmlFileFilePath = Join-Path -Path $env:TEMP -ChildPath ((New-Guid).Guid + '.xml')
+      Set-Content -LiteralPath $xmlFileFilePath -Encoding UTF8 -Value $xmlFile
 
-      # Download Registry File
-      $webclient = New-Object System.Net.WebClient
-      $webclient.DownloadFile($RegFileURL,$RegFile)
+      # Copy the current user language settings to the default user account and system user account.
+      $procStartInfo = New-Object -TypeName 'System.Diagnostics.ProcessStartInfo' -ArgumentList 'C:\Windows\System32\control.exe', ('intl.cpl,,/f:"{0}"' -f $xmlFileFilePath)
+      $procStartInfo.UseShellExecute = $false
+      $procStartInfo.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Minimized
+      $proc = [System.Diagnostics.Process]::Start($procStartInfo)
+      $proc.WaitForExit()
+      $proc.Dispose()
 
-      $userprofiles = Get-Childitem C:\Users -Force -Exclude 'Default User','All Users','Public' -Directory | Select-Object name, fullname
-      foreach($profile in $userprofiles){
-          $username = $profile.name
-          $profilepath = $profile.fullname
-          if($username -ne 'Default'){
-              $usersid = Get-LocalUser $username | Select-Object sid 
-              $usersid = $usersid.SID.Value
-          }
-          else{
-              $usersid = "None"
-          }
-          
-          $UserRegPath = "Registry::HKEY_USERS\$($usersid)"
-          
-          $NTuserDatPath = Join-Path $profilepath "NTUSER.DAT"
-
-          Write-Host $UserRegPath
-          Write-Host $NTuserDatPath
-
-          # Check if Hive is loaded or not
-          if(Test-Path $UserRegPath){
-              $PersonalRegFile = (Split-Path $RegFile -Parent) + "$username" + '.reg'
-              $RegFileContent = Get-Content $RegFile
-              $PersonalRegFileContent = $RegFileContent -Replace 'HKEY_USERS\\Replace',"HKEY_USERS\$usersid"
-              Set-Content -Path $PersonalRegFile -Value $PersonalRegFileContent
-
-              Remove-Item "$($UserRegPath)\Control Panel\International\User Profile" -Force -Recurse -confirm:$false -erroraction silentlycontinue
-              Remove-Item "$($UserRegPath)\Keyboard Layout\Preload" -Force -Recurse -confirm:$false -erroraction silentlycontinue
-
-              & REG import $PersonalRegFile > $null 2>&1
-          }
-          else{
-              & REG LOAD HKU\Replace $NTuserDatPath > $null 2>&1
-
-              Remove-Item 'Registry::HKEY_USERS\Replace\Control Panel\International\User Profile' -Force -Recurse -confirm:$false -erroraction silentlycontinue
-              Remove-Item 'Registry::HKEY_USERS\Replace\Keyboard Layout\Preload' -Force -Recurse -confirm:$false -erroraction silentlycontinue
-
-              & REG Import $RegFile > $null 2>&1
-
-              $unloaded = $false
-              $attempts = 0
-              while (!$unloaded -and ($attempts -le 5)) {
-                  [gc]::Collect() # necessary call to be able to unload registry hive
-                  & REG UNLOAD HKU\Replace > $null 2>&1
-                  $unloaded = $?
-                  $attempts += 1
-              }
-          }
-      }
+      # Delete the XML file.
+      Remove-Item -LiteralPath $xmlFileFilePath -Force
     }
     TestScript = {
-      $RegFilePath = 'C:\Users\Default\NTUSER.DAT'
-      $RegLoadPath = 'HKLM\Default'
-
-       & REG LOAD $RegLoadPath $RegFilePath > $null 2>&1
-
-      $LocaleValue = Get-ItemProperty -Path 'REGISTRY::HKEY_LOCAL_MACHINE\Default\Control Panel\International' -Name 'LocaleName'
-
-      $unloaded = $false
-      $attempts = 0
-      while (!$unloaded -and ($attempts -le 5)) {
-        [gc]::Collect() # necessary call to be able to unload registry hive
-        & REG UNLOAD HKLM\Default > $null 2>&1
-        $unloaded = $?
-        $attempts += 1
-        Start-Sleep -Seconds 5
-      }
-      if ($LocaleValue.LocaleName.LocaleName -eq 'de-CH') {
+      if ('223' -eq (Get-WinHomeLocation).GeoId) {
         return $true
       }
-      return $false
-    }
+      else {
+        return $false
+      }
   }
+}
 }
 
 # This will generate the MOF files for the configuration.
