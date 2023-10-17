@@ -39,7 +39,7 @@ Configuration WindowsServerDefaultSettings {
           $unloaded = $?
           $attempts += 1
       }
-      @{ Result = $LocaleValue }
+      @{ Result = $LocaleValue.LocaleName }
     }
     SetScript = {
       # Parameter
@@ -117,7 +117,7 @@ Configuration WindowsServerDefaultSettings {
         $attempts += 1
         Start-Sleep -Seconds 5
       }
-      if ($LocaleValue -eq 'de-CH') {
+      if ($LocaleValue.LocaleName.LocaleName -eq 'de-CH') {
         return $true
       }
       return $false
