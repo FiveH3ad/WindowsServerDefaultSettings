@@ -63,6 +63,12 @@ Configuration WindowsServerDefaultSettings {
 
       # Delete the XML file.
       Remove-Item -LiteralPath $xmlFileFilePath -Force
+
+      # Remove the NTUSER.DAT file from the Administrator User Profile.
+      $ntuserDatFilePath = Join-Path -Path $env:SystemDrive -ChildPath 'Users\Administrator\NTUSER.DAT'
+      if (Test-Path -LiteralPath $ntuserDatFilePath) {
+        Remove-Item -LiteralPath $ntuserDatFilePath -Force -ErrorAction SilentlyContinue
+      }
     }
     TestScript = {
       if ('223' -eq (Get-WinHomeLocation).GeoId) {
