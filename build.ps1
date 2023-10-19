@@ -1,17 +1,34 @@
 # creates a whole build for the machine configuration
+param(
+  [Parameter(Mandatory = $false)]
+  [string]$configurationName = "WindowsServerDefaultSettings",
+  [Parameter(Mandatory = $false)]
+  [string]$version = "0.0.7",
+  [Parameter(Mandatory = $false)]
+  [string]$ScriptName = "windows_virtual_machine_default_settings.ps1",
+  [Parameter(Mandatory = $false)]
+  [string]$PolicyName = "Default Windows Server Settings Policy",
+  [Parameter(Mandatory = $false)]
+  [string]$PolicyDescription = "This Policy sets TimeZone, Language, Keyboard, and Location settings for Windows Server and installs the SNMP Service."
+)
 
-$configurationName = "WindowsServerDefaultSettings"
-$version = "0.0.6"
+$ConfiguratioPath = "$configurationName\$configurationName.mof"
+
 Set-Location -Path $PSScriptRoot
 
 # Create a build for the machine configuration
-. .\windows_virtual_machine_default_settings.ps1
+powershell.exe -command "Set-Location $PSScriptRoot
+. .\$scriptName"
+
+if(Test-Path -Path $ConfiguratioPath){
+  Remove-Item -Path $ConfiguratioPath -Force
+}
 
 Rename-Item -Path "$configurationName\localhost.mof" -NewName "$configurationName.mof"
 
 $params = @{
-  Name          = 'WindowsServerDefaultSettings'
-  Configuration = './WindowsServerDefaultSettings/WindowsServerDefaultSettings.mof'
+  Name          = $configurationName
+  Configuration = $ConfiguratioPath
   Type          = 'AuditAndSet'
   Force         = $true
 }
@@ -21,9 +38,9 @@ New-GuestConfigurationPackage @params
 $PolicyConfig      = @{
   PolicyId      = '6be70959-6cd7-4adb-a592-2678ca9170f5'
   ContentUri    = 'https://github.com/FiveH3ad/WindowsServerDefaultSettings/raw/master/WindowsServerDefaultSettings.zip'
-  DisplayName   = 'Default Windows Server Settings Policy'
-  Description   = 'This Policy sets TimeZone, Language, Keyboard, and Location settings for Windows Server and installs the SNMP Service.'
-  Path          = './policies/WindowsServerDefaultSettings.json'
+  DisplayName   = $PolicyName
+  Description   = $PolicyDescription
+  Path          = './policies/'
   Platform      = 'Windows'
   PolicyVersion = $version
   Mode         = 'ApplyAndAutoCorrect'
@@ -54,7 +71,11 @@ git commit -m "version $version"
 
 git push https://github.com/FiveH3ad/WindowsServerDefaultSettings.git master --force
 
-$policy = New-AzPolicyDefinition -Policy .\policies\WindowsServerDefaultSettings.json\WindowsServerDefaultSettings_DeployIfNotExists.json -Name 'WindowsServerDefaultSettings'
+$policy = New-AzPolicyDefinition -Policy $policyPath -Name $configurationName
 $subscription_id = (Get-AzContext).Subscription.Id
 
-New-AzPolicyAssignment -Name 'WindowsServerDefaultSettings' -DisplayName 'Windows Server Default Settings' -Scope "/subscriptions/$subscription_id" -PolicyDefinition $policy -IdentityType SystemAssigned -Location 'West Europe'
+if (Get-AzPolicyAssignment -Name $configurationName -ErrorAction SilentlyContinue){
+  Remove-AzPolicyAssignment -Name $configurationName -Scope "/subscriptions/$subscription_id"
+}
+
+New-AzPolicyAssignment -Name $configurationName -DisplayName $PolicyName -Scope "/subscriptions/$subscription_id" -PolicyDefinition $policy -IdentityType SystemAssigned -Location 'West Europe'
