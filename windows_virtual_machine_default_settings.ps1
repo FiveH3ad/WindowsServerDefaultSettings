@@ -18,9 +18,17 @@ Configuration WindowsServerDefaultSettings {
     SystemLocale = 'de-CH'
     IsSingleInstance = 'Yes'
   }
-  PendingReboot 'CheckPendingReboot' {
-    Name = 'CheckPendingReboot'
+  PendingReboot 'CheckPendingRebootSNMP' {
+    Name = 'CheckPendingRebootSNMP'
     DependsOn = '[WindowsFeature]SNMP'
+  }
+  PendingReboot 'CheckPendingRebootSystemLocale' {
+    Name = 'CheckPendingRebootSystemLocale'
+    DependsOn = '[SystemLocale]SetSystemLocale'
+  }
+  PendingReboot 'CheckPendingRebootUserRegistry' {
+    Name = 'CheckPendingRebootUserRegistry'
+    DependsOn = '[Script]UserRegistry'
   }
   Script 'UserRegistry' {
     GetScript = {

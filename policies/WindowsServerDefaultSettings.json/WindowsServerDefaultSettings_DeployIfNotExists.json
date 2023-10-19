@@ -6,7 +6,7 @@
     "description": "This Policy sets TimeZone, Language, Keyboard, and Location settings for Windows Server and installs the SNMP Service.",
     "metadata": {
       "category": "Guest Configuration",
-      "version": "0.0.1",
+      "version": "0.0.6",
       "requiredProviders": [
         "Microsoft.GuestConfiguration"
       ],
@@ -15,7 +15,7 @@
         "version": "1.0.0",
         "contentType": "Custom",
         "contentUri": "https://github.com/FiveH3ad/WindowsServerDefaultSettings/raw/master/WindowsServerDefaultSettings.zip",
-        "contentHash": "7180F905B7B6C48FA56DDEFD7434EBADC6D85C2F5F3D06B59FDD33D2470B8F1C"
+        "contentHash": "F71CD4EF569B4B2C1A88B81BAE9F8BD6BA97B59D13ECBD063813BADFBFAA0D99"
       }
     },
     "parameters": {
@@ -315,8 +315,8 @@
                         "version": "1.0.0",
                         "contentType": "Custom",
                         "contentUri": "https://github.com/FiveH3ad/WindowsServerDefaultSettings/raw/master/WindowsServerDefaultSettings.zip",
-                        "contentHash": "7180F905B7B6C48FA56DDEFD7434EBADC6D85C2F5F3D06B59FDD33D2470B8F1C",
-                        "assignmentType": "ApplyAndMonitor"
+                        "contentHash": "F71CD4EF569B4B2C1A88B81BAE9F8BD6BA97B59D13ECBD063813BADFBFAA0D99",
+                        "assignmentType": "ApplyAndAutoCorrect"
                       }
                     }
                   },
@@ -332,8 +332,8 @@
                         "version": "1.0.0",
                         "contentType": "Custom",
                         "contentUri": "https://github.com/FiveH3ad/WindowsServerDefaultSettings/raw/master/WindowsServerDefaultSettings.zip",
-                        "contentHash": "7180F905B7B6C48FA56DDEFD7434EBADC6D85C2F5F3D06B59FDD33D2470B8F1C",
-                        "assignmentType": "ApplyAndMonitor"
+                        "contentHash": "F71CD4EF569B4B2C1A88B81BAE9F8BD6BA97B59D13ECBD063813BADFBFAA0D99",
+                        "assignmentType": "ApplyAndAutoCorrect"
                       }
                     }
                   },
@@ -349,8 +349,8 @@
                         "version": "1.0.0",
                         "contentType": "Custom",
                         "contentUri": "https://github.com/FiveH3ad/WindowsServerDefaultSettings/raw/master/WindowsServerDefaultSettings.zip",
-                        "contentHash": "7180F905B7B6C48FA56DDEFD7434EBADC6D85C2F5F3D06B59FDD33D2470B8F1C",
-                        "assignmentType": "ApplyAndMonitor"
+                        "contentHash": "F71CD4EF569B4B2C1A88B81BAE9F8BD6BA97B59D13ECBD063813BADFBFAA0D99",
+                        "assignmentType": "ApplyAndAutoCorrect"
                       }
                     }
                   }

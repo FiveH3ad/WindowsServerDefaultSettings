@@ -1,7 +1,7 @@
 # creates a whole build for the machine configuration
 
 $configurationName = "WindowsServerDefaultSettings"
-
+$version = "0.0.6"
 Set-Location -Path $PSScriptRoot
 
 # Create a build for the machine configuration
@@ -25,17 +25,34 @@ $PolicyConfig      = @{
   Description   = 'This Policy sets TimeZone, Language, Keyboard, and Location settings for Windows Server and installs the SNMP Service.'
   Path          = './policies/WindowsServerDefaultSettings.json'
   Platform      = 'Windows'
-  PolicyVersion = '0.0.1'
+  PolicyVersion = $version
   Mode         = 'ApplyAndAutoCorrect'
 }
 
 $policyPath = (New-GuestConfigurationPolicy @PolicyConfig).Path
 
+$packageHash = Get-FileHash ".\$configurationName.zip" -Algorithm SHA256 | Select-Object -ExpandProperty Hash
+
 $policyContentRaw = Get-Content $policyPath -Raw
 
 $policyContentJson = $policyContentRaw -replace '"MicrosoftWindowsDesktop",','' | ConvertFrom-Json
 
+$policyContentJson.properties.metadata.guestConfiguration.contentHash = $packageHash
+
+$i = 0
+
+foreach($item in $policyContentJson.properties.policyRule.then.details.deployment.properties.template.resources){
+  $policyContentJson.properties.policyRule.then.details.deployment.properties.template.resources[$i].properties.guestConfiguration.contentHash = $packageHash
+  $i++
+}
+
 Set-Content $policyPath -Value ($policyContentJson | ConvertTo-Json -Depth 100)
+
+git add *
+
+git commit -m "version $version"
+
+git push https://github.com/FiveH3ad/WindowsServerDefaultSettings.git master --force
 
 $policy = New-AzPolicyDefinition -Policy .\policies\WindowsServerDefaultSettings.json\WindowsServerDefaultSettings_DeployIfNotExists.json -Name 'WindowsServerDefaultSettings'
 $subscription_id = (Get-AzContext).Subscription.Id
